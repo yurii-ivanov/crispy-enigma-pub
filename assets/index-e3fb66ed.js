@@ -8109,58 +8109,6 @@ const createImpl = (createState) => {
   return useBoundStore;
 };
 const create = (createState) => createState ? createImpl(createState) : createImpl;
-const useElintVehiclesStore = create()((set2, get2) => ({
-  everCount: 3,
-  vehicles: [
-    {
-      id: crypto.randomUUID(),
-      name: "A",
-      latitude: 50.47520052846764,
-      longitude: 30.417108362162082,
-      azimuth: 90
-    },
-    {
-      id: crypto.randomUUID(),
-      name: "B",
-      latitude: 50.4874781936058,
-      longitude: 30.520131234011533,
-      // latitude: 48.163618040334114,
-      // longitude: 37.753974593776384,
-      azimuth: 180
-    },
-    {
-      id: crypto.randomUUID(),
-      name: "C",
-      latitude: 50.505311785025185,
-      longitude: 30.476325613694026,
-      azimuth: 157
-    }
-  ],
-  addNew: () => set2((state) => ({ vehicles: [...state.vehicles, getRandomElint$1("РЕБ " + (state.everCount + 1))], everCount: ++state.everCount })),
-  // addNew: () => set((state) => ({ vehicles: [...state.vehicles, { id: crypto.randomUUID(), name: 'РЕБ ' + (state.everCount + 1) }], everCount: ++state.everCount })),
-  getById: (id2) => get2().vehicles.find((v2) => v2.id === id2),
-  update: (vehicle) => set2((state) => {
-    if (!vehicle) {
-      return state;
-    }
-    const newVehicles = state.vehicles.map((v2) => {
-      if (v2.id !== vehicle.id)
-        return v2;
-      return vehicle;
-    });
-    return { vehicles: newVehicles };
-  }),
-  deleteById: (id2) => set2((state) => ({ vehicles: state.vehicles.filter((v2) => v2.id !== id2) }))
-}));
-const getRandomElint$1 = (name) => {
-  return {
-    name,
-    id: crypto.randomUUID(),
-    latitude: Math.random() * (48.5 - 48) + 48,
-    longitude: Math.random() * (37.8 - 37.5) + 37.5,
-    azimuth: Math.random() * 360
-  };
-};
 let dmsSeparator = " ";
 class Dms {
   // note Unicode Degree = U+00B0. Prime = U+2032, Double prime = U+2033
@@ -8484,704 +8432,6 @@ Number.prototype.toRadians = function() {
 Number.prototype.toDegrees = function() {
   return this * 180 / Math.PI;
 };
-const π$1 = Math.PI;
-class LatLonSpherical {
-  /**
-   * Creates a latitude/longitude point on the earth’s surface, using a spherical model earth.
-   *
-   * @param  {number} lat - Latitude (in degrees).
-   * @param  {number} lon - Longitude (in degrees).
-   * @throws {TypeError} Invalid lat/lon.
-   *
-   * @example
-   *   import LatLon from '/js/geodesy/latlon-spherical.js';
-   *   const p = new LatLon(52.205, 0.119);
-   */
-  constructor(lat, lon) {
-    if (isNaN(lat))
-      throw new TypeError(`invalid lat ‘${lat}’`);
-    if (isNaN(lon))
-      throw new TypeError(`invalid lon ‘${lon}’`);
-    this._lat = Dms.wrap90(Number(lat));
-    this._lon = Dms.wrap180(Number(lon));
-  }
-  /**
-   * Latitude in degrees north from equator (including aliases lat, latitude): can be set as
-   * numeric or hexagesimal (deg-min-sec); returned as numeric.
-   */
-  get lat() {
-    return this._lat;
-  }
-  get latitude() {
-    return this._lat;
-  }
-  set lat(lat) {
-    this._lat = isNaN(lat) ? Dms.wrap90(Dms.parse(lat)) : Dms.wrap90(Number(lat));
-    if (isNaN(this._lat))
-      throw new TypeError(`invalid lat ‘${lat}’`);
-  }
-  set latitude(lat) {
-    this._lat = isNaN(lat) ? Dms.wrap90(Dms.parse(lat)) : Dms.wrap90(Number(lat));
-    if (isNaN(this._lat))
-      throw new TypeError(`invalid latitude ‘${lat}’`);
-  }
-  /**
-   * Longitude in degrees east from international reference meridian (including aliases lon, lng,
-   * longitude): can be set as numeric or hexagesimal (deg-min-sec); returned as numeric.
-   */
-  get lon() {
-    return this._lon;
-  }
-  get lng() {
-    return this._lon;
-  }
-  get longitude() {
-    return this._lon;
-  }
-  set lon(lon) {
-    this._lon = isNaN(lon) ? Dms.wrap180(Dms.parse(lon)) : Dms.wrap180(Number(lon));
-    if (isNaN(this._lon))
-      throw new TypeError(`invalid lon ‘${lon}’`);
-  }
-  set lng(lon) {
-    this._lon = isNaN(lon) ? Dms.wrap180(Dms.parse(lon)) : Dms.wrap180(Number(lon));
-    if (isNaN(this._lon))
-      throw new TypeError(`invalid lng ‘${lon}’`);
-  }
-  set longitude(lon) {
-    this._lon = isNaN(lon) ? Dms.wrap180(Dms.parse(lon)) : Dms.wrap180(Number(lon));
-    if (isNaN(this._lon))
-      throw new TypeError(`invalid longitude ‘${lon}’`);
-  }
-  /** Conversion factors; 1000 * LatLon.metresToKm gives 1. */
-  static get metresToKm() {
-    return 1 / 1e3;
-  }
-  /** Conversion factors; 1000 * LatLon.metresToMiles gives 0.621371192237334. */
-  static get metresToMiles() {
-    return 1 / 1609.344;
-  }
-  /** Conversion factors; 1000 * LatLon.metresToMiles gives 0.5399568034557236. */
-  static get metresToNauticalMiles() {
-    return 1 / 1852;
-  }
-  /**
-   * Parses a latitude/longitude point from a variety of formats.
-   *
-   * Latitude & longitude (in degrees) can be supplied as two separate parameters, as a single
-   * comma-separated lat/lon string, or as a single object with { lat, lon } or GeoJSON properties.
-   *
-   * The latitude/longitude values may be numeric or strings; they may be signed decimal or
-   * deg-min-sec (hexagesimal) suffixed by compass direction (NSEW); a variety of separators are
-   * accepted. Examples -3.62, '3 37 12W', '3°37′12″W'.
-   *
-   * Thousands/decimal separators must be comma/dot; use Dms.fromLocale to convert locale-specific
-   * thousands/decimal separators.
-   *
-   * @param   {number|string|Object} lat|latlon - Latitude (in degrees) or comma-separated lat/lon or lat/lon object.
-   * @param   {number|string}        [lon]      - Longitude (in degrees).
-   * @returns {LatLon} Latitude/longitude point.
-   * @throws  {TypeError} Invalid point.
-   *
-   * @example
-   *   const p1 = LatLon.parse(52.205, 0.119);                                    // numeric pair (≡ new LatLon)
-   *   const p2 = LatLon.parse('52.205', '0.119');                                // numeric string pair (≡ new LatLon)
-   *   const p3 = LatLon.parse('52.205, 0.119');                                  // single string numerics
-   *   const p4 = LatLon.parse('52°12′18.0″N', '000°07′08.4″E');                  // DMS pair
-   *   const p5 = LatLon.parse('52°12′18.0″N, 000°07′08.4″E');                    // single string DMS
-   *   const p6 = LatLon.parse({ lat: 52.205, lon: 0.119 });                      // { lat, lon } object numeric
-   *   const p7 = LatLon.parse({ lat: '52°12′18.0″N', lng: '000°07′08.4″E' });    // { lat, lng } object DMS
-   *   const p8 = LatLon.parse({ type: 'Point', coordinates: [ 0.119, 52.205] }); // GeoJSON
-   */
-  static parse(...args) {
-    if (args.length == 0)
-      throw new TypeError("invalid (empty) point");
-    if (args[0] === null || args[1] === null)
-      throw new TypeError("invalid (null) point");
-    let lat = void 0, lon = void 0;
-    if (args.length == 2) {
-      [lat, lon] = args;
-      lat = Dms.wrap90(Dms.parse(lat));
-      lon = Dms.wrap180(Dms.parse(lon));
-      if (isNaN(lat) || isNaN(lon))
-        throw new TypeError(`invalid point ‘${args.toString()}’`);
-    }
-    if (args.length == 1 && typeof args[0] == "string") {
-      [lat, lon] = args[0].split(",");
-      lat = Dms.wrap90(Dms.parse(lat));
-      lon = Dms.wrap180(Dms.parse(lon));
-      if (isNaN(lat) || isNaN(lon))
-        throw new TypeError(`invalid point ‘${args[0]}’`);
-    }
-    if (args.length == 1 && typeof args[0] == "object") {
-      const ll2 = args[0];
-      if (ll2.type == "Point" && Array.isArray(ll2.coordinates)) {
-        [lon, lat] = ll2.coordinates;
-      } else {
-        if (ll2.latitude != void 0)
-          lat = ll2.latitude;
-        if (ll2.lat != void 0)
-          lat = ll2.lat;
-        if (ll2.longitude != void 0)
-          lon = ll2.longitude;
-        if (ll2.lng != void 0)
-          lon = ll2.lng;
-        if (ll2.lon != void 0)
-          lon = ll2.lon;
-        lat = Dms.wrap90(Dms.parse(lat));
-        lon = Dms.wrap180(Dms.parse(lon));
-      }
-      if (isNaN(lat) || isNaN(lon))
-        throw new TypeError(`invalid point ‘${JSON.stringify(args[0])}’`);
-    }
-    if (isNaN(lat) || isNaN(lon))
-      throw new TypeError(`invalid point ‘${args.toString()}’`);
-    return new LatLonSpherical(lat, lon);
-  }
-  /**
-   * Returns the distance along the surface of the earth from ‘this’ point to destination point.
-   *
-   * Uses haversine formula: a = sin²(Δφ/2) + cosφ1·cosφ2 · sin²(Δλ/2); d = 2 · atan2(√a, √(a-1)).
-   *
-   * @param   {LatLon} point - Latitude/longitude of destination point.
-   * @param   {number} [radius=6371e3] - Radius of earth (defaults to mean radius in metres).
-   * @returns {number} Distance between this point and destination point, in same units as radius.
-   * @throws  {TypeError} Invalid radius.
-   *
-   * @example
-   *   const p1 = new LatLon(52.205, 0.119);
-   *   const p2 = new LatLon(48.857, 2.351);
-   *   const d = p1.distanceTo(p2);       // 404.3×10³ m
-   *   const m = p1.distanceTo(p2, 3959); // 251.2 miles
-   */
-  distanceTo(point, radius = 6371e3) {
-    if (!(point instanceof LatLonSpherical))
-      point = LatLonSpherical.parse(point);
-    if (isNaN(radius))
-      throw new TypeError(`invalid radius ‘${radius}’`);
-    const R2 = radius;
-    const φ1 = this.lat.toRadians(), λ1 = this.lon.toRadians();
-    const φ2 = point.lat.toRadians(), λ2 = point.lon.toRadians();
-    const Δφ = φ2 - φ1;
-    const Δλ = λ2 - λ1;
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const d = R2 * c;
-    return d;
-  }
-  /**
-   * Returns the initial bearing from ‘this’ point to destination point.
-   *
-   * @param   {LatLon} point - Latitude/longitude of destination point.
-   * @returns {number} Initial bearing in degrees from north (0°..360°).
-   *
-   * @example
-   *   const p1 = new LatLon(52.205, 0.119);
-   *   const p2 = new LatLon(48.857, 2.351);
-   *   const b1 = p1.initialBearingTo(p2); // 156.2°
-   */
-  initialBearingTo(point) {
-    if (!(point instanceof LatLonSpherical))
-      point = LatLonSpherical.parse(point);
-    if (this.equals(point))
-      return NaN;
-    const φ1 = this.lat.toRadians();
-    const φ2 = point.lat.toRadians();
-    const Δλ = (point.lon - this.lon).toRadians();
-    const x2 = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-    const y2 = Math.sin(Δλ) * Math.cos(φ2);
-    const θ = Math.atan2(y2, x2);
-    const bearing = θ.toDegrees();
-    return Dms.wrap360(bearing);
-  }
-  /**
-   * Returns final bearing arriving at destination point from ‘this’ point; the final bearing will
-   * differ from the initial bearing by varying degrees according to distance and latitude.
-   *
-   * @param   {LatLon} point - Latitude/longitude of destination point.
-   * @returns {number} Final bearing in degrees from north (0°..360°).
-   *
-   * @example
-   *   const p1 = new LatLon(52.205, 0.119);
-   *   const p2 = new LatLon(48.857, 2.351);
-   *   const b2 = p1.finalBearingTo(p2); // 157.9°
-   */
-  finalBearingTo(point) {
-    if (!(point instanceof LatLonSpherical))
-      point = LatLonSpherical.parse(point);
-    const bearing = point.initialBearingTo(this) + 180;
-    return Dms.wrap360(bearing);
-  }
-  /**
-   * Returns the midpoint between ‘this’ point and destination point.
-   *
-   * @param   {LatLon} point - Latitude/longitude of destination point.
-   * @returns {LatLon} Midpoint between this point and destination point.
-   *
-   * @example
-   *   const p1 = new LatLon(52.205, 0.119);
-   *   const p2 = new LatLon(48.857, 2.351);
-   *   const pMid = p1.midpointTo(p2); // 50.5363°N, 001.2746°E
-   */
-  midpointTo(point) {
-    if (!(point instanceof LatLonSpherical))
-      point = LatLonSpherical.parse(point);
-    const φ1 = this.lat.toRadians();
-    const λ1 = this.lon.toRadians();
-    const φ2 = point.lat.toRadians();
-    const Δλ = (point.lon - this.lon).toRadians();
-    const A2 = { x: Math.cos(φ1), y: 0, z: Math.sin(φ1) };
-    const B2 = { x: Math.cos(φ2) * Math.cos(Δλ), y: Math.cos(φ2) * Math.sin(Δλ), z: Math.sin(φ2) };
-    const C2 = { x: A2.x + B2.x, y: A2.y + B2.y, z: A2.z + B2.z };
-    const φm = Math.atan2(C2.z, Math.sqrt(C2.x * C2.x + C2.y * C2.y));
-    const λm = λ1 + Math.atan2(C2.y, C2.x);
-    const lat = φm.toDegrees();
-    const lon = λm.toDegrees();
-    return new LatLonSpherical(lat, lon);
-  }
-  /**
-   * Returns the point at given fraction between ‘this’ point and given point.
-   *
-   * @param   {LatLon} point - Latitude/longitude of destination point.
-   * @param   {number} fraction - Fraction between the two points (0 = this point, 1 = specified point).
-   * @returns {LatLon} Intermediate point between this point and destination point.
-   *
-   * @example
-   *   const p1 = new LatLon(52.205, 0.119);
-   *   const p2 = new LatLon(48.857, 2.351);
-   *   const pInt = p1.intermediatePointTo(p2, 0.25); // 51.3721°N, 000.7073°E
-   */
-  intermediatePointTo(point, fraction) {
-    if (!(point instanceof LatLonSpherical))
-      point = LatLonSpherical.parse(point);
-    if (this.equals(point))
-      return new LatLonSpherical(this.lat, this.lon);
-    const φ1 = this.lat.toRadians(), λ1 = this.lon.toRadians();
-    const φ2 = point.lat.toRadians(), λ2 = point.lon.toRadians();
-    const Δφ = φ2 - φ1;
-    const Δλ = λ2 - λ1;
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const δ = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const A2 = Math.sin((1 - fraction) * δ) / Math.sin(δ);
-    const B2 = Math.sin(fraction * δ) / Math.sin(δ);
-    const x2 = A2 * Math.cos(φ1) * Math.cos(λ1) + B2 * Math.cos(φ2) * Math.cos(λ2);
-    const y2 = A2 * Math.cos(φ1) * Math.sin(λ1) + B2 * Math.cos(φ2) * Math.sin(λ2);
-    const z2 = A2 * Math.sin(φ1) + B2 * Math.sin(φ2);
-    const φ3 = Math.atan2(z2, Math.sqrt(x2 * x2 + y2 * y2));
-    const λ3 = Math.atan2(y2, x2);
-    const lat = φ3.toDegrees();
-    const lon = λ3.toDegrees();
-    return new LatLonSpherical(lat, lon);
-  }
-  /**
-   * Returns the destination point from ‘this’ point having travelled the given distance on the
-   * given initial bearing (bearing normally varies around path followed).
-   *
-   * @param   {number} distance - Distance travelled, in same units as earth radius (default: metres).
-   * @param   {number} bearing - Initial bearing in degrees from north.
-   * @param   {number} [radius=6371e3] - (Mean) radius of earth (defaults to radius in metres).
-   * @returns {LatLon} Destination point.
-   *
-   * @example
-   *   const p1 = new LatLon(51.47788, -0.00147);
-   *   const p2 = p1.destinationPoint(7794, 300.7); // 51.5136°N, 000.0983°W
-   */
-  destinationPoint(distance, bearing, radius = 6371e3) {
-    const δ = distance / radius;
-    const θ = Number(bearing).toRadians();
-    const φ1 = this.lat.toRadians(), λ1 = this.lon.toRadians();
-    const sinφ2 = Math.sin(φ1) * Math.cos(δ) + Math.cos(φ1) * Math.sin(δ) * Math.cos(θ);
-    const φ2 = Math.asin(sinφ2);
-    const y2 = Math.sin(θ) * Math.sin(δ) * Math.cos(φ1);
-    const x2 = Math.cos(δ) - Math.sin(φ1) * sinφ2;
-    const λ2 = λ1 + Math.atan2(y2, x2);
-    const lat = φ2.toDegrees();
-    const lon = λ2.toDegrees();
-    return new LatLonSpherical(lat, lon);
-  }
-  /**
-   * Returns the point of intersection of two paths defined by point and bearing.
-   *
-   * @param   {LatLon}      p1 - First point.
-   * @param   {number}      brng1 - Initial bearing from first point.
-   * @param   {LatLon}      p2 - Second point.
-   * @param   {number}      brng2 - Initial bearing from second point.
-   * @returns {LatLon|null} Destination point (null if no unique intersection defined).
-   *
-   * @example
-   *   const p1 = new LatLon(51.8853, 0.2545), brng1 = 108.547;
-   *   const p2 = new LatLon(49.0034, 2.5735), brng2 =  32.435;
-   *   const pInt = LatLon.intersection(p1, brng1, p2, brng2); // 50.9078°N, 004.5084°E
-   */
-  static intersection(p1, brng1, p2, brng2) {
-    if (!(p1 instanceof LatLonSpherical))
-      p1 = LatLonSpherical.parse(p1);
-    if (!(p2 instanceof LatLonSpherical))
-      p2 = LatLonSpherical.parse(p2);
-    if (isNaN(brng1))
-      throw new TypeError(`invalid brng1 ‘${brng1}’`);
-    if (isNaN(brng2))
-      throw new TypeError(`invalid brng2 ‘${brng2}’`);
-    const φ1 = p1.lat.toRadians(), λ1 = p1.lon.toRadians();
-    const φ2 = p2.lat.toRadians(), λ2 = p2.lon.toRadians();
-    const θ13 = Number(brng1).toRadians(), θ23 = Number(brng2).toRadians();
-    const Δφ = φ2 - φ1, Δλ = λ2 - λ1;
-    const δ12 = 2 * Math.asin(Math.sqrt(Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)));
-    if (Math.abs(δ12) < Number.EPSILON)
-      return new LatLonSpherical(p1.lat, p1.lon);
-    const cosθa = (Math.sin(φ2) - Math.sin(φ1) * Math.cos(δ12)) / (Math.sin(δ12) * Math.cos(φ1));
-    const cosθb = (Math.sin(φ1) - Math.sin(φ2) * Math.cos(δ12)) / (Math.sin(δ12) * Math.cos(φ2));
-    const θa = Math.acos(Math.min(Math.max(cosθa, -1), 1));
-    const θb = Math.acos(Math.min(Math.max(cosθb, -1), 1));
-    const θ12 = Math.sin(λ2 - λ1) > 0 ? θa : 2 * π$1 - θa;
-    const θ21 = Math.sin(λ2 - λ1) > 0 ? 2 * π$1 - θb : θb;
-    const α1 = θ13 - θ12;
-    const α2 = θ21 - θ23;
-    if (Math.sin(α1) == 0 && Math.sin(α2) == 0)
-      return null;
-    if (Math.sin(α1) * Math.sin(α2) < 0)
-      return null;
-    const cosα3 = -Math.cos(α1) * Math.cos(α2) + Math.sin(α1) * Math.sin(α2) * Math.cos(δ12);
-    const δ13 = Math.atan2(Math.sin(δ12) * Math.sin(α1) * Math.sin(α2), Math.cos(α2) + Math.cos(α1) * cosα3);
-    const φ3 = Math.asin(Math.min(Math.max(Math.sin(φ1) * Math.cos(δ13) + Math.cos(φ1) * Math.sin(δ13) * Math.cos(θ13), -1), 1));
-    const Δλ13 = Math.atan2(Math.sin(θ13) * Math.sin(δ13) * Math.cos(φ1), Math.cos(δ13) - Math.sin(φ1) * Math.sin(φ3));
-    const λ3 = λ1 + Δλ13;
-    const lat = φ3.toDegrees();
-    const lon = λ3.toDegrees();
-    return new LatLonSpherical(lat, lon);
-  }
-  /**
-   * Returns (signed) distance from ‘this’ point to great circle defined by start-point and
-   * end-point.
-   *
-   * @param   {LatLon} pathStart - Start point of great circle path.
-   * @param   {LatLon} pathEnd - End point of great circle path.
-   * @param   {number} [radius=6371e3] - (Mean) radius of earth (defaults to radius in metres).
-   * @returns {number} Distance to great circle (-ve if to left, +ve if to right of path).
-   *
-   * @example
-   *   const pCurrent = new LatLon(53.2611, -0.7972);
-   *   const p1 = new LatLon(53.3206, -1.7297);
-   *   const p2 = new LatLon(53.1887, 0.1334);
-   *   const d = pCurrent.crossTrackDistanceTo(p1, p2);  // -307.5 m
-   */
-  crossTrackDistanceTo(pathStart, pathEnd, radius = 6371e3) {
-    if (!(pathStart instanceof LatLonSpherical))
-      pathStart = LatLonSpherical.parse(pathStart);
-    if (!(pathEnd instanceof LatLonSpherical))
-      pathEnd = LatLonSpherical.parse(pathEnd);
-    const R2 = radius;
-    if (this.equals(pathStart))
-      return 0;
-    const δ13 = pathStart.distanceTo(this, R2) / R2;
-    const θ13 = pathStart.initialBearingTo(this).toRadians();
-    const θ12 = pathStart.initialBearingTo(pathEnd).toRadians();
-    const δxt = Math.asin(Math.sin(δ13) * Math.sin(θ13 - θ12));
-    return δxt * R2;
-  }
-  /**
-   * Returns how far ‘this’ point is along a path from from start-point, heading towards end-point.
-   * That is, if a perpendicular is drawn from ‘this’ point to the (great circle) path, the
-   * along-track distance is the distance from the start point to where the perpendicular crosses
-   * the path.
-   *
-   * @param   {LatLon} pathStart - Start point of great circle path.
-   * @param   {LatLon} pathEnd - End point of great circle path.
-   * @param   {number} [radius=6371e3] - (Mean) radius of earth (defaults to radius in metres).
-   * @returns {number} Distance along great circle to point nearest ‘this’ point.
-   *
-   * @example
-   *   const pCurrent = new LatLon(53.2611, -0.7972);
-   *   const p1 = new LatLon(53.3206, -1.7297);
-   *   const p2 = new LatLon(53.1887,  0.1334);
-   *   const d = pCurrent.alongTrackDistanceTo(p1, p2);  // 62.331 km
-   */
-  alongTrackDistanceTo(pathStart, pathEnd, radius = 6371e3) {
-    if (!(pathStart instanceof LatLonSpherical))
-      pathStart = LatLonSpherical.parse(pathStart);
-    if (!(pathEnd instanceof LatLonSpherical))
-      pathEnd = LatLonSpherical.parse(pathEnd);
-    const R2 = radius;
-    if (this.equals(pathStart))
-      return 0;
-    const δ13 = pathStart.distanceTo(this, R2) / R2;
-    const θ13 = pathStart.initialBearingTo(this).toRadians();
-    const θ12 = pathStart.initialBearingTo(pathEnd).toRadians();
-    const δxt = Math.asin(Math.sin(δ13) * Math.sin(θ13 - θ12));
-    const δat = Math.acos(Math.cos(δ13) / Math.abs(Math.cos(δxt)));
-    return δat * Math.sign(Math.cos(θ12 - θ13)) * R2;
-  }
-  /**
-   * Returns maximum latitude reached when travelling on a great circle on given bearing from
-   * ‘this’ point (‘Clairaut’s formula’). Negate the result for the minimum latitude (in the
-   * southern hemisphere).
-   *
-   * The maximum latitude is independent of longitude; it will be the same for all points on a
-   * given latitude.
-   *
-   * @param   {number} bearing - Initial bearing.
-   * @returns {number} Maximum latitude reached.
-   */
-  maxLatitude(bearing) {
-    const θ = Number(bearing).toRadians();
-    const φ = this.lat.toRadians();
-    const φMax = Math.acos(Math.abs(Math.sin(θ) * Math.cos(φ)));
-    return φMax.toDegrees();
-  }
-  /**
-   * Returns the pair of meridians at which a great circle defined by two points crosses the given
-   * latitude. If the great circle doesn't reach the given latitude, null is returned.
-   *
-   * @param   {LatLon}      point1 - First point defining great circle.
-   * @param   {LatLon}      point2 - Second point defining great circle.
-   * @param   {number}      latitude - Latitude crossings are to be determined for.
-   * @returns {Object|null} Object containing { lon1, lon2 } or null if given latitude not reached.
-   */
-  static crossingParallels(point1, point2, latitude) {
-    if (point1.equals(point2))
-      return null;
-    const φ = Number(latitude).toRadians();
-    const φ1 = point1.lat.toRadians();
-    const λ1 = point1.lon.toRadians();
-    const φ2 = point2.lat.toRadians();
-    const λ2 = point2.lon.toRadians();
-    const Δλ = λ2 - λ1;
-    const x2 = Math.sin(φ1) * Math.cos(φ2) * Math.cos(φ) * Math.sin(Δλ);
-    const y2 = Math.sin(φ1) * Math.cos(φ2) * Math.cos(φ) * Math.cos(Δλ) - Math.cos(φ1) * Math.sin(φ2) * Math.cos(φ);
-    const z2 = Math.cos(φ1) * Math.cos(φ2) * Math.sin(φ) * Math.sin(Δλ);
-    if (z2 * z2 > x2 * x2 + y2 * y2)
-      return null;
-    const λm = Math.atan2(-y2, x2);
-    const Δλi = Math.acos(z2 / Math.sqrt(x2 * x2 + y2 * y2));
-    const λi1 = λ1 + λm - Δλi;
-    const λi2 = λ1 + λm + Δλi;
-    const lon1 = λi1.toDegrees();
-    const lon2 = λi2.toDegrees();
-    return {
-      lon1: Dms.wrap180(lon1),
-      lon2: Dms.wrap180(lon2)
-    };
-  }
-  /* Rhumb - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
-  /**
-   * Returns the distance travelling from ‘this’ point to destination point along a rhumb line.
-   *
-   * @param   {LatLon} point - Latitude/longitude of destination point.
-   * @param   {number} [radius=6371e3] - (Mean) radius of earth (defaults to radius in metres).
-   * @returns {number} Distance in km between this point and destination point (same units as radius).
-   *
-   * @example
-   *   const p1 = new LatLon(51.127, 1.338);
-   *   const p2 = new LatLon(50.964, 1.853);
-   *   const d = p1.distanceTo(p2); //  40.31 km
-   */
-  rhumbDistanceTo(point, radius = 6371e3) {
-    if (!(point instanceof LatLonSpherical))
-      point = LatLonSpherical.parse(point);
-    const R2 = radius;
-    const φ1 = this.lat.toRadians();
-    const φ2 = point.lat.toRadians();
-    const Δφ = φ2 - φ1;
-    let Δλ = Math.abs(point.lon - this.lon).toRadians();
-    if (Math.abs(Δλ) > π$1)
-      Δλ = Δλ > 0 ? -(2 * π$1 - Δλ) : 2 * π$1 + Δλ;
-    const Δψ = Math.log(Math.tan(φ2 / 2 + π$1 / 4) / Math.tan(φ1 / 2 + π$1 / 4));
-    const q2 = Math.abs(Δψ) > 1e-11 ? Δφ / Δψ : Math.cos(φ1);
-    const δ = Math.sqrt(Δφ * Δφ + q2 * q2 * Δλ * Δλ);
-    const d = δ * R2;
-    return d;
-  }
-  /**
-   * Returns the bearing from ‘this’ point to destination point along a rhumb line.
-   *
-   * @param   {LatLon}    point - Latitude/longitude of destination point.
-   * @returns {number}    Bearing in degrees from north.
-   *
-   * @example
-   *   const p1 = new LatLon(51.127, 1.338);
-   *   const p2 = new LatLon(50.964, 1.853);
-   *   const d = p1.rhumbBearingTo(p2); // 116.7°
-   */
-  rhumbBearingTo(point) {
-    if (!(point instanceof LatLonSpherical))
-      point = LatLonSpherical.parse(point);
-    if (this.equals(point))
-      return NaN;
-    const φ1 = this.lat.toRadians();
-    const φ2 = point.lat.toRadians();
-    let Δλ = (point.lon - this.lon).toRadians();
-    if (Math.abs(Δλ) > π$1)
-      Δλ = Δλ > 0 ? -(2 * π$1 - Δλ) : 2 * π$1 + Δλ;
-    const Δψ = Math.log(Math.tan(φ2 / 2 + π$1 / 4) / Math.tan(φ1 / 2 + π$1 / 4));
-    const θ = Math.atan2(Δλ, Δψ);
-    const bearing = θ.toDegrees();
-    return Dms.wrap360(bearing);
-  }
-  /**
-   * Returns the destination point having travelled along a rhumb line from ‘this’ point the given
-   * distance on the given bearing.
-   *
-   * @param   {number} distance - Distance travelled, in same units as earth radius (default: metres).
-   * @param   {number} bearing - Bearing in degrees from north.
-   * @param   {number} [radius=6371e3] - (Mean) radius of earth (defaults to radius in metres).
-   * @returns {LatLon} Destination point.
-   *
-   * @example
-   *   const p1 = new LatLon(51.127, 1.338);
-   *   const p2 = p1.rhumbDestinationPoint(40300, 116.7); // 50.9642°N, 001.8530°E
-   */
-  rhumbDestinationPoint(distance, bearing, radius = 6371e3) {
-    const φ1 = this.lat.toRadians(), λ1 = this.lon.toRadians();
-    const θ = Number(bearing).toRadians();
-    const δ = distance / radius;
-    const Δφ = δ * Math.cos(θ);
-    let φ2 = φ1 + Δφ;
-    if (Math.abs(φ2) > π$1 / 2)
-      φ2 = φ2 > 0 ? π$1 - φ2 : -π$1 - φ2;
-    const Δψ = Math.log(Math.tan(φ2 / 2 + π$1 / 4) / Math.tan(φ1 / 2 + π$1 / 4));
-    const q2 = Math.abs(Δψ) > 1e-11 ? Δφ / Δψ : Math.cos(φ1);
-    const Δλ = δ * Math.sin(θ) / q2;
-    const λ2 = λ1 + Δλ;
-    const lat = φ2.toDegrees();
-    const lon = λ2.toDegrees();
-    return new LatLonSpherical(lat, lon);
-  }
-  /**
-   * Returns the loxodromic midpoint (along a rhumb line) between ‘this’ point and second point.
-   *
-   * @param   {LatLon} point - Latitude/longitude of second point.
-   * @returns {LatLon} Midpoint between this point and second point.
-   *
-   * @example
-   *   const p1 = new LatLon(51.127, 1.338);
-   *   const p2 = new LatLon(50.964, 1.853);
-   *   const pMid = p1.rhumbMidpointTo(p2); // 51.0455°N, 001.5957°E
-   */
-  rhumbMidpointTo(point) {
-    if (!(point instanceof LatLonSpherical))
-      point = LatLonSpherical.parse(point);
-    const φ1 = this.lat.toRadians();
-    let λ1 = this.lon.toRadians();
-    const φ2 = point.lat.toRadians(), λ2 = point.lon.toRadians();
-    if (Math.abs(λ2 - λ1) > π$1)
-      λ1 += 2 * π$1;
-    const φ3 = (φ1 + φ2) / 2;
-    const f1 = Math.tan(π$1 / 4 + φ1 / 2);
-    const f2 = Math.tan(π$1 / 4 + φ2 / 2);
-    const f3 = Math.tan(π$1 / 4 + φ3 / 2);
-    let λ3 = ((λ2 - λ1) * Math.log(f3) + λ1 * Math.log(f2) - λ2 * Math.log(f1)) / Math.log(f2 / f1);
-    if (!isFinite(λ3))
-      λ3 = (λ1 + λ2) / 2;
-    const lat = φ3.toDegrees();
-    const lon = λ3.toDegrees();
-    return new LatLonSpherical(lat, lon);
-  }
-  /* Area - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-  /**
-   * Calculates the area of a spherical polygon where the sides of the polygon are great circle
-   * arcs joining the vertices.
-   *
-   * @param   {LatLon[]} polygon - Array of points defining vertices of the polygon.
-   * @param   {number}   [radius=6371e3] - (Mean) radius of earth (defaults to radius in metres).
-   * @returns {number}   The area of the polygon in the same units as radius.
-   *
-   * @example
-   *   const polygon = [new LatLon(0,0), new LatLon(1,0), new LatLon(0,1)];
-   *   const area = LatLon.areaOf(polygon); // 6.18e9 m²
-   */
-  static areaOf(polygon, radius = 6371e3) {
-    const R2 = radius;
-    const closed = polygon[0].equals(polygon[polygon.length - 1]);
-    if (!closed)
-      polygon.push(polygon[0]);
-    const nVertices = polygon.length - 1;
-    let S2 = 0;
-    for (let v2 = 0; v2 < nVertices; v2++) {
-      const φ1 = polygon[v2].lat.toRadians();
-      const φ2 = polygon[v2 + 1].lat.toRadians();
-      const Δλ = (polygon[v2 + 1].lon - polygon[v2].lon).toRadians();
-      const E2 = 2 * Math.atan2(Math.tan(Δλ / 2) * (Math.tan(φ1 / 2) + Math.tan(φ2 / 2)), 1 + Math.tan(φ1 / 2) * Math.tan(φ2 / 2));
-      S2 += E2;
-    }
-    if (isPoleEnclosedBy(polygon))
-      S2 = Math.abs(S2) - 2 * π$1;
-    const A2 = Math.abs(S2 * R2 * R2);
-    if (!closed)
-      polygon.pop();
-    return A2;
-    function isPoleEnclosedBy(p2) {
-      let ΣΔ = 0;
-      let prevBrng = p2[0].initialBearingTo(p2[1]);
-      for (let v2 = 0; v2 < p2.length - 1; v2++) {
-        const initBrng2 = p2[v2].initialBearingTo(p2[v2 + 1]);
-        const finalBrng = p2[v2].finalBearingTo(p2[v2 + 1]);
-        ΣΔ += (initBrng2 - prevBrng + 540) % 360 - 180;
-        ΣΔ += (finalBrng - initBrng2 + 540) % 360 - 180;
-        prevBrng = finalBrng;
-      }
-      const initBrng = p2[0].initialBearingTo(p2[1]);
-      ΣΔ += (initBrng - prevBrng + 540) % 360 - 180;
-      const enclosed = Math.abs(ΣΔ) < 90;
-      return enclosed;
-    }
-  }
-  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
-  /**
-   * Checks if another point is equal to ‘this’ point.
-   *
-   * @param   {LatLon} point - Point to be compared against this point.
-   * @returns {bool}   True if points have identical latitude and longitude values.
-   *
-   * @example
-   *   const p1 = new LatLon(52.205, 0.119);
-   *   const p2 = new LatLon(52.205, 0.119);
-   *   const equal = p1.equals(p2); // true
-   */
-  equals(point) {
-    if (!(point instanceof LatLonSpherical))
-      point = LatLonSpherical.parse(point);
-    if (Math.abs(this.lat - point.lat) > Number.EPSILON)
-      return false;
-    if (Math.abs(this.lon - point.lon) > Number.EPSILON)
-      return false;
-    return true;
-  }
-  /**
-   * Converts ‘this’ point to a GeoJSON object.
-   *
-   * @returns {Object} this point as a GeoJSON ‘Point’ object.
-   */
-  toGeoJSON() {
-    return { type: "Point", coordinates: [this.lon, this.lat] };
-  }
-  /**
-   * Returns a string representation of ‘this’ point, formatted as degrees, degrees+minutes, or
-   * degrees+minutes+seconds.
-   *
-   * @param   {string} [format=d] - Format point as 'd', 'dm', 'dms', or 'n' for signed numeric.
-   * @param   {number} [dp=4|2|0] - Number of decimal places to use: default 4 for d, 2 for dm, 0 for dms.
-   * @returns {string} Comma-separated formatted latitude/longitude.
-   * @throws  {RangeError} Invalid format.
-   *
-   * @example
-   *   const greenwich = new LatLon(51.47788, -0.00147);
-   *   const d = greenwich.toString();                        // 51.4779°N, 000.0015°W
-   *   const dms = greenwich.toString('dms', 2);              // 51°28′40.37″N, 000°00′05.29″W
-   *   const [lat, lon] = greenwich.toString('n').split(','); // 51.4779, -0.0015
-   */
-  toString(format = "d", dp = void 0) {
-    if (!["d", "dm", "dms", "n"].includes(format))
-      throw new RangeError(`invalid format ‘${format}’`);
-    if (format == "n") {
-      if (dp == void 0)
-        dp = 4;
-      return `${this.lat.toFixed(dp)},${this.lon.toFixed(dp)}`;
-    }
-    const lat = Dms.toLat(this.lat, format, dp);
-    const lon = Dms.toLon(this.lon, format, dp);
-    return `${lat}, ${lon}`;
-  }
-}
 class Vector3d {
   /**
    * Creates a 3-d vector.
@@ -9712,7 +8962,7 @@ class Cartesian extends Vector3d {
     return `[${x2},${y2},${z2}]`;
   }
 }
-const π = Math.PI;
+const π$1 = Math.PI;
 const ε = Number.EPSILON;
 class LatLonEllipsoidal_Vincenty extends LatLonEllipsoidal {
   /**
@@ -9923,9 +9173,9 @@ class LatLonEllipsoidal_Vincenty extends LatLonEllipsoidal {
     const L2 = λ2 - λ1;
     const tanU1 = (1 - f2) * Math.tan(φ1), cosU1 = 1 / Math.sqrt(1 + tanU1 * tanU1), sinU1 = tanU1 * cosU1;
     const tanU2 = (1 - f2) * Math.tan(φ2), cosU2 = 1 / Math.sqrt(1 + tanU2 * tanU2), sinU2 = tanU2 * cosU2;
-    const antipodal = Math.abs(L2) > π / 2 || Math.abs(φ2 - φ1) > π / 2;
+    const antipodal = Math.abs(L2) > π$1 / 2 || Math.abs(φ2 - φ1) > π$1 / 2;
     let λ = L2, sinλ = null, cosλ = null;
-    let σ = antipodal ? π : 0, sinσ = 0, cosσ = antipodal ? -1 : 1, sinSqσ = null;
+    let σ = antipodal ? π$1 : 0, sinσ = 0, cosσ = antipodal ? -1 : 1, sinSqσ = null;
     let cos2σₘ = 1;
     let cosSqα = 1;
     let λʹ = null, iterations = 0;
@@ -9944,8 +9194,8 @@ class LatLonEllipsoidal_Vincenty extends LatLonEllipsoidal {
       const C2 = f2 / 16 * cosSqα * (4 + f2 * (4 - 3 * cosSqα));
       λʹ = λ;
       λ = L2 + (1 - C2) * f2 * sinα * (σ + C2 * sinσ * (cos2σₘ + C2 * cosσ * (-1 + 2 * cos2σₘ * cos2σₘ)));
-      const iterationCheck = antipodal ? Math.abs(λ) - π : Math.abs(λ);
-      if (iterationCheck > π)
+      const iterationCheck = antipodal ? Math.abs(λ) - π$1 : Math.abs(λ);
+      if (iterationCheck > π$1)
         throw new EvalError("λ > π");
     } while (Math.abs(λ - λʹ) > 1e-12 && ++iterations < 1e3);
     if (iterations >= 1e3)
@@ -9956,13 +9206,778 @@ class LatLonEllipsoidal_Vincenty extends LatLonEllipsoidal {
     const Δσ = B2 * sinσ * (cos2σₘ + B2 / 4 * (cosσ * (-1 + 2 * cos2σₘ * cos2σₘ) - B2 / 6 * cos2σₘ * (-3 + 4 * sinσ * sinσ) * (-3 + 4 * cos2σₘ * cos2σₘ)));
     const s = b * A2 * (σ - Δσ);
     const α1 = Math.abs(sinSqσ) < ε ? 0 : Math.atan2(cosU2 * sinλ, cosU1 * sinU2 - sinU1 * cosU2 * cosλ);
-    const α2 = Math.abs(sinSqσ) < ε ? π : Math.atan2(cosU1 * sinλ, -sinU1 * cosU2 + cosU1 * sinU2 * cosλ);
+    const α2 = Math.abs(sinSqσ) < ε ? π$1 : Math.atan2(cosU1 * sinλ, -sinU1 * cosU2 + cosU1 * sinU2 * cosλ);
     return {
       distance: s,
       initialBearing: Math.abs(s) < ε ? NaN : Dms.wrap360(α1.toDegrees()),
       finalBearing: Math.abs(s) < ε ? NaN : Dms.wrap360(α2.toDegrees()),
       iterations
     };
+  }
+}
+const useElintVehiclesStore = create()((set2, get2) => ({
+  everCount: 0,
+  vehicles: [
+    // {
+    //   id: crypto.randomUUID(),
+    //   name: 'A',
+    //   latitude: 50.47520052846764,
+    //   longitude: 30.417108362162082,
+    //   azimuth: 90.0000,
+    // },
+    // {
+    //   id: crypto.randomUUID(),
+    //   name: 'B',
+    //   latitude: 50.4874781936058,
+    //   longitude: 30.520131234011533,
+    //   // latitude: 48.163618040334114,
+    //   // longitude: 37.753974593776384,
+    //   azimuth: 180.0000,
+    // },
+    // {
+    //   id: crypto.randomUUID(),
+    //   name: 'C',
+    //   latitude: 50.505311785025185,
+    //   longitude: 30.476325613694026,
+    //   azimuth: 157.0000,
+    // },
+  ],
+  addNew: () => set2((state) => {
+    return { vehicles: [...state.vehicles, getRandomElint$1("РЕБ " + (state.everCount + 1))], everCount: ++state.everCount };
+  }),
+  // addNew: () => set((state) => ({ vehicles: [...state.vehicles, { id: crypto.randomUUID(), name: 'РЕБ ' + (state.everCount + 1) }], everCount: ++state.everCount })),
+  getById: (id2) => get2().vehicles.find((v2) => v2.id === id2),
+  update: (vehicle) => set2((state) => {
+    if (!vehicle) {
+      return state;
+    }
+    vehicle.ray = getGeoDirect(vehicle);
+    const newVehicles = state.vehicles.map((v2) => {
+      if (v2.id !== vehicle.id)
+        return v2;
+      return vehicle;
+    });
+    return { vehicles: newVehicles };
+  }),
+  deleteById: (id2) => set2((state) => ({ vehicles: state.vehicles.filter((v2) => v2.id !== id2) }))
+}));
+const getRandomElint$1 = (name) => {
+  const base = {
+    name,
+    id: crypto.randomUUID(),
+    latitude: Math.random() * (48.5 - 48) + 48,
+    longitude: Math.random() * (37.8 - 37.5) + 37.5,
+    azimuth: Math.random() * 360
+  };
+  base.ray = getGeoDirect(base);
+  return base;
+};
+const rayLength = 5e4;
+const getGeoDirect = (vehicle) => {
+  const point = new LatLonEllipsoidal_Vincenty(vehicle.latitude, vehicle.longitude);
+  const directAC = point.direct(rayLength, vehicle.azimuth);
+  return {
+    finalBearing: directAC.finalBearing,
+    lat: directAC.point.lat,
+    lon: directAC.point.lon
+  };
+};
+const π = Math.PI;
+class LatLonSpherical {
+  /**
+   * Creates a latitude/longitude point on the earth’s surface, using a spherical model earth.
+   *
+   * @param  {number} lat - Latitude (in degrees).
+   * @param  {number} lon - Longitude (in degrees).
+   * @throws {TypeError} Invalid lat/lon.
+   *
+   * @example
+   *   import LatLon from '/js/geodesy/latlon-spherical.js';
+   *   const p = new LatLon(52.205, 0.119);
+   */
+  constructor(lat, lon) {
+    if (isNaN(lat))
+      throw new TypeError(`invalid lat ‘${lat}’`);
+    if (isNaN(lon))
+      throw new TypeError(`invalid lon ‘${lon}’`);
+    this._lat = Dms.wrap90(Number(lat));
+    this._lon = Dms.wrap180(Number(lon));
+  }
+  /**
+   * Latitude in degrees north from equator (including aliases lat, latitude): can be set as
+   * numeric or hexagesimal (deg-min-sec); returned as numeric.
+   */
+  get lat() {
+    return this._lat;
+  }
+  get latitude() {
+    return this._lat;
+  }
+  set lat(lat) {
+    this._lat = isNaN(lat) ? Dms.wrap90(Dms.parse(lat)) : Dms.wrap90(Number(lat));
+    if (isNaN(this._lat))
+      throw new TypeError(`invalid lat ‘${lat}’`);
+  }
+  set latitude(lat) {
+    this._lat = isNaN(lat) ? Dms.wrap90(Dms.parse(lat)) : Dms.wrap90(Number(lat));
+    if (isNaN(this._lat))
+      throw new TypeError(`invalid latitude ‘${lat}’`);
+  }
+  /**
+   * Longitude in degrees east from international reference meridian (including aliases lon, lng,
+   * longitude): can be set as numeric or hexagesimal (deg-min-sec); returned as numeric.
+   */
+  get lon() {
+    return this._lon;
+  }
+  get lng() {
+    return this._lon;
+  }
+  get longitude() {
+    return this._lon;
+  }
+  set lon(lon) {
+    this._lon = isNaN(lon) ? Dms.wrap180(Dms.parse(lon)) : Dms.wrap180(Number(lon));
+    if (isNaN(this._lon))
+      throw new TypeError(`invalid lon ‘${lon}’`);
+  }
+  set lng(lon) {
+    this._lon = isNaN(lon) ? Dms.wrap180(Dms.parse(lon)) : Dms.wrap180(Number(lon));
+    if (isNaN(this._lon))
+      throw new TypeError(`invalid lng ‘${lon}’`);
+  }
+  set longitude(lon) {
+    this._lon = isNaN(lon) ? Dms.wrap180(Dms.parse(lon)) : Dms.wrap180(Number(lon));
+    if (isNaN(this._lon))
+      throw new TypeError(`invalid longitude ‘${lon}’`);
+  }
+  /** Conversion factors; 1000 * LatLon.metresToKm gives 1. */
+  static get metresToKm() {
+    return 1 / 1e3;
+  }
+  /** Conversion factors; 1000 * LatLon.metresToMiles gives 0.621371192237334. */
+  static get metresToMiles() {
+    return 1 / 1609.344;
+  }
+  /** Conversion factors; 1000 * LatLon.metresToMiles gives 0.5399568034557236. */
+  static get metresToNauticalMiles() {
+    return 1 / 1852;
+  }
+  /**
+   * Parses a latitude/longitude point from a variety of formats.
+   *
+   * Latitude & longitude (in degrees) can be supplied as two separate parameters, as a single
+   * comma-separated lat/lon string, or as a single object with { lat, lon } or GeoJSON properties.
+   *
+   * The latitude/longitude values may be numeric or strings; they may be signed decimal or
+   * deg-min-sec (hexagesimal) suffixed by compass direction (NSEW); a variety of separators are
+   * accepted. Examples -3.62, '3 37 12W', '3°37′12″W'.
+   *
+   * Thousands/decimal separators must be comma/dot; use Dms.fromLocale to convert locale-specific
+   * thousands/decimal separators.
+   *
+   * @param   {number|string|Object} lat|latlon - Latitude (in degrees) or comma-separated lat/lon or lat/lon object.
+   * @param   {number|string}        [lon]      - Longitude (in degrees).
+   * @returns {LatLon} Latitude/longitude point.
+   * @throws  {TypeError} Invalid point.
+   *
+   * @example
+   *   const p1 = LatLon.parse(52.205, 0.119);                                    // numeric pair (≡ new LatLon)
+   *   const p2 = LatLon.parse('52.205', '0.119');                                // numeric string pair (≡ new LatLon)
+   *   const p3 = LatLon.parse('52.205, 0.119');                                  // single string numerics
+   *   const p4 = LatLon.parse('52°12′18.0″N', '000°07′08.4″E');                  // DMS pair
+   *   const p5 = LatLon.parse('52°12′18.0″N, 000°07′08.4″E');                    // single string DMS
+   *   const p6 = LatLon.parse({ lat: 52.205, lon: 0.119 });                      // { lat, lon } object numeric
+   *   const p7 = LatLon.parse({ lat: '52°12′18.0″N', lng: '000°07′08.4″E' });    // { lat, lng } object DMS
+   *   const p8 = LatLon.parse({ type: 'Point', coordinates: [ 0.119, 52.205] }); // GeoJSON
+   */
+  static parse(...args) {
+    if (args.length == 0)
+      throw new TypeError("invalid (empty) point");
+    if (args[0] === null || args[1] === null)
+      throw new TypeError("invalid (null) point");
+    let lat = void 0, lon = void 0;
+    if (args.length == 2) {
+      [lat, lon] = args;
+      lat = Dms.wrap90(Dms.parse(lat));
+      lon = Dms.wrap180(Dms.parse(lon));
+      if (isNaN(lat) || isNaN(lon))
+        throw new TypeError(`invalid point ‘${args.toString()}’`);
+    }
+    if (args.length == 1 && typeof args[0] == "string") {
+      [lat, lon] = args[0].split(",");
+      lat = Dms.wrap90(Dms.parse(lat));
+      lon = Dms.wrap180(Dms.parse(lon));
+      if (isNaN(lat) || isNaN(lon))
+        throw new TypeError(`invalid point ‘${args[0]}’`);
+    }
+    if (args.length == 1 && typeof args[0] == "object") {
+      const ll2 = args[0];
+      if (ll2.type == "Point" && Array.isArray(ll2.coordinates)) {
+        [lon, lat] = ll2.coordinates;
+      } else {
+        if (ll2.latitude != void 0)
+          lat = ll2.latitude;
+        if (ll2.lat != void 0)
+          lat = ll2.lat;
+        if (ll2.longitude != void 0)
+          lon = ll2.longitude;
+        if (ll2.lng != void 0)
+          lon = ll2.lng;
+        if (ll2.lon != void 0)
+          lon = ll2.lon;
+        lat = Dms.wrap90(Dms.parse(lat));
+        lon = Dms.wrap180(Dms.parse(lon));
+      }
+      if (isNaN(lat) || isNaN(lon))
+        throw new TypeError(`invalid point ‘${JSON.stringify(args[0])}’`);
+    }
+    if (isNaN(lat) || isNaN(lon))
+      throw new TypeError(`invalid point ‘${args.toString()}’`);
+    return new LatLonSpherical(lat, lon);
+  }
+  /**
+   * Returns the distance along the surface of the earth from ‘this’ point to destination point.
+   *
+   * Uses haversine formula: a = sin²(Δφ/2) + cosφ1·cosφ2 · sin²(Δλ/2); d = 2 · atan2(√a, √(a-1)).
+   *
+   * @param   {LatLon} point - Latitude/longitude of destination point.
+   * @param   {number} [radius=6371e3] - Radius of earth (defaults to mean radius in metres).
+   * @returns {number} Distance between this point and destination point, in same units as radius.
+   * @throws  {TypeError} Invalid radius.
+   *
+   * @example
+   *   const p1 = new LatLon(52.205, 0.119);
+   *   const p2 = new LatLon(48.857, 2.351);
+   *   const d = p1.distanceTo(p2);       // 404.3×10³ m
+   *   const m = p1.distanceTo(p2, 3959); // 251.2 miles
+   */
+  distanceTo(point, radius = 6371e3) {
+    if (!(point instanceof LatLonSpherical))
+      point = LatLonSpherical.parse(point);
+    if (isNaN(radius))
+      throw new TypeError(`invalid radius ‘${radius}’`);
+    const R2 = radius;
+    const φ1 = this.lat.toRadians(), λ1 = this.lon.toRadians();
+    const φ2 = point.lat.toRadians(), λ2 = point.lon.toRadians();
+    const Δφ = φ2 - φ1;
+    const Δλ = λ2 - λ1;
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const d = R2 * c;
+    return d;
+  }
+  /**
+   * Returns the initial bearing from ‘this’ point to destination point.
+   *
+   * @param   {LatLon} point - Latitude/longitude of destination point.
+   * @returns {number} Initial bearing in degrees from north (0°..360°).
+   *
+   * @example
+   *   const p1 = new LatLon(52.205, 0.119);
+   *   const p2 = new LatLon(48.857, 2.351);
+   *   const b1 = p1.initialBearingTo(p2); // 156.2°
+   */
+  initialBearingTo(point) {
+    if (!(point instanceof LatLonSpherical))
+      point = LatLonSpherical.parse(point);
+    if (this.equals(point))
+      return NaN;
+    const φ1 = this.lat.toRadians();
+    const φ2 = point.lat.toRadians();
+    const Δλ = (point.lon - this.lon).toRadians();
+    const x2 = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+    const y2 = Math.sin(Δλ) * Math.cos(φ2);
+    const θ = Math.atan2(y2, x2);
+    const bearing = θ.toDegrees();
+    return Dms.wrap360(bearing);
+  }
+  /**
+   * Returns final bearing arriving at destination point from ‘this’ point; the final bearing will
+   * differ from the initial bearing by varying degrees according to distance and latitude.
+   *
+   * @param   {LatLon} point - Latitude/longitude of destination point.
+   * @returns {number} Final bearing in degrees from north (0°..360°).
+   *
+   * @example
+   *   const p1 = new LatLon(52.205, 0.119);
+   *   const p2 = new LatLon(48.857, 2.351);
+   *   const b2 = p1.finalBearingTo(p2); // 157.9°
+   */
+  finalBearingTo(point) {
+    if (!(point instanceof LatLonSpherical))
+      point = LatLonSpherical.parse(point);
+    const bearing = point.initialBearingTo(this) + 180;
+    return Dms.wrap360(bearing);
+  }
+  /**
+   * Returns the midpoint between ‘this’ point and destination point.
+   *
+   * @param   {LatLon} point - Latitude/longitude of destination point.
+   * @returns {LatLon} Midpoint between this point and destination point.
+   *
+   * @example
+   *   const p1 = new LatLon(52.205, 0.119);
+   *   const p2 = new LatLon(48.857, 2.351);
+   *   const pMid = p1.midpointTo(p2); // 50.5363°N, 001.2746°E
+   */
+  midpointTo(point) {
+    if (!(point instanceof LatLonSpherical))
+      point = LatLonSpherical.parse(point);
+    const φ1 = this.lat.toRadians();
+    const λ1 = this.lon.toRadians();
+    const φ2 = point.lat.toRadians();
+    const Δλ = (point.lon - this.lon).toRadians();
+    const A2 = { x: Math.cos(φ1), y: 0, z: Math.sin(φ1) };
+    const B2 = { x: Math.cos(φ2) * Math.cos(Δλ), y: Math.cos(φ2) * Math.sin(Δλ), z: Math.sin(φ2) };
+    const C2 = { x: A2.x + B2.x, y: A2.y + B2.y, z: A2.z + B2.z };
+    const φm = Math.atan2(C2.z, Math.sqrt(C2.x * C2.x + C2.y * C2.y));
+    const λm = λ1 + Math.atan2(C2.y, C2.x);
+    const lat = φm.toDegrees();
+    const lon = λm.toDegrees();
+    return new LatLonSpherical(lat, lon);
+  }
+  /**
+   * Returns the point at given fraction between ‘this’ point and given point.
+   *
+   * @param   {LatLon} point - Latitude/longitude of destination point.
+   * @param   {number} fraction - Fraction between the two points (0 = this point, 1 = specified point).
+   * @returns {LatLon} Intermediate point between this point and destination point.
+   *
+   * @example
+   *   const p1 = new LatLon(52.205, 0.119);
+   *   const p2 = new LatLon(48.857, 2.351);
+   *   const pInt = p1.intermediatePointTo(p2, 0.25); // 51.3721°N, 000.7073°E
+   */
+  intermediatePointTo(point, fraction) {
+    if (!(point instanceof LatLonSpherical))
+      point = LatLonSpherical.parse(point);
+    if (this.equals(point))
+      return new LatLonSpherical(this.lat, this.lon);
+    const φ1 = this.lat.toRadians(), λ1 = this.lon.toRadians();
+    const φ2 = point.lat.toRadians(), λ2 = point.lon.toRadians();
+    const Δφ = φ2 - φ1;
+    const Δλ = λ2 - λ1;
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const δ = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const A2 = Math.sin((1 - fraction) * δ) / Math.sin(δ);
+    const B2 = Math.sin(fraction * δ) / Math.sin(δ);
+    const x2 = A2 * Math.cos(φ1) * Math.cos(λ1) + B2 * Math.cos(φ2) * Math.cos(λ2);
+    const y2 = A2 * Math.cos(φ1) * Math.sin(λ1) + B2 * Math.cos(φ2) * Math.sin(λ2);
+    const z2 = A2 * Math.sin(φ1) + B2 * Math.sin(φ2);
+    const φ3 = Math.atan2(z2, Math.sqrt(x2 * x2 + y2 * y2));
+    const λ3 = Math.atan2(y2, x2);
+    const lat = φ3.toDegrees();
+    const lon = λ3.toDegrees();
+    return new LatLonSpherical(lat, lon);
+  }
+  /**
+   * Returns the destination point from ‘this’ point having travelled the given distance on the
+   * given initial bearing (bearing normally varies around path followed).
+   *
+   * @param   {number} distance - Distance travelled, in same units as earth radius (default: metres).
+   * @param   {number} bearing - Initial bearing in degrees from north.
+   * @param   {number} [radius=6371e3] - (Mean) radius of earth (defaults to radius in metres).
+   * @returns {LatLon} Destination point.
+   *
+   * @example
+   *   const p1 = new LatLon(51.47788, -0.00147);
+   *   const p2 = p1.destinationPoint(7794, 300.7); // 51.5136°N, 000.0983°W
+   */
+  destinationPoint(distance, bearing, radius = 6371e3) {
+    const δ = distance / radius;
+    const θ = Number(bearing).toRadians();
+    const φ1 = this.lat.toRadians(), λ1 = this.lon.toRadians();
+    const sinφ2 = Math.sin(φ1) * Math.cos(δ) + Math.cos(φ1) * Math.sin(δ) * Math.cos(θ);
+    const φ2 = Math.asin(sinφ2);
+    const y2 = Math.sin(θ) * Math.sin(δ) * Math.cos(φ1);
+    const x2 = Math.cos(δ) - Math.sin(φ1) * sinφ2;
+    const λ2 = λ1 + Math.atan2(y2, x2);
+    const lat = φ2.toDegrees();
+    const lon = λ2.toDegrees();
+    return new LatLonSpherical(lat, lon);
+  }
+  /**
+   * Returns the point of intersection of two paths defined by point and bearing.
+   *
+   * @param   {LatLon}      p1 - First point.
+   * @param   {number}      brng1 - Initial bearing from first point.
+   * @param   {LatLon}      p2 - Second point.
+   * @param   {number}      brng2 - Initial bearing from second point.
+   * @returns {LatLon|null} Destination point (null if no unique intersection defined).
+   *
+   * @example
+   *   const p1 = new LatLon(51.8853, 0.2545), brng1 = 108.547;
+   *   const p2 = new LatLon(49.0034, 2.5735), brng2 =  32.435;
+   *   const pInt = LatLon.intersection(p1, brng1, p2, brng2); // 50.9078°N, 004.5084°E
+   */
+  static intersection(p1, brng1, p2, brng2) {
+    if (!(p1 instanceof LatLonSpherical))
+      p1 = LatLonSpherical.parse(p1);
+    if (!(p2 instanceof LatLonSpherical))
+      p2 = LatLonSpherical.parse(p2);
+    if (isNaN(brng1))
+      throw new TypeError(`invalid brng1 ‘${brng1}’`);
+    if (isNaN(brng2))
+      throw new TypeError(`invalid brng2 ‘${brng2}’`);
+    const φ1 = p1.lat.toRadians(), λ1 = p1.lon.toRadians();
+    const φ2 = p2.lat.toRadians(), λ2 = p2.lon.toRadians();
+    const θ13 = Number(brng1).toRadians(), θ23 = Number(brng2).toRadians();
+    const Δφ = φ2 - φ1, Δλ = λ2 - λ1;
+    const δ12 = 2 * Math.asin(Math.sqrt(Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)));
+    if (Math.abs(δ12) < Number.EPSILON)
+      return new LatLonSpherical(p1.lat, p1.lon);
+    const cosθa = (Math.sin(φ2) - Math.sin(φ1) * Math.cos(δ12)) / (Math.sin(δ12) * Math.cos(φ1));
+    const cosθb = (Math.sin(φ1) - Math.sin(φ2) * Math.cos(δ12)) / (Math.sin(δ12) * Math.cos(φ2));
+    const θa = Math.acos(Math.min(Math.max(cosθa, -1), 1));
+    const θb = Math.acos(Math.min(Math.max(cosθb, -1), 1));
+    const θ12 = Math.sin(λ2 - λ1) > 0 ? θa : 2 * π - θa;
+    const θ21 = Math.sin(λ2 - λ1) > 0 ? 2 * π - θb : θb;
+    const α1 = θ13 - θ12;
+    const α2 = θ21 - θ23;
+    if (Math.sin(α1) == 0 && Math.sin(α2) == 0)
+      return null;
+    if (Math.sin(α1) * Math.sin(α2) < 0)
+      return null;
+    const cosα3 = -Math.cos(α1) * Math.cos(α2) + Math.sin(α1) * Math.sin(α2) * Math.cos(δ12);
+    const δ13 = Math.atan2(Math.sin(δ12) * Math.sin(α1) * Math.sin(α2), Math.cos(α2) + Math.cos(α1) * cosα3);
+    const φ3 = Math.asin(Math.min(Math.max(Math.sin(φ1) * Math.cos(δ13) + Math.cos(φ1) * Math.sin(δ13) * Math.cos(θ13), -1), 1));
+    const Δλ13 = Math.atan2(Math.sin(θ13) * Math.sin(δ13) * Math.cos(φ1), Math.cos(δ13) - Math.sin(φ1) * Math.sin(φ3));
+    const λ3 = λ1 + Δλ13;
+    const lat = φ3.toDegrees();
+    const lon = λ3.toDegrees();
+    return new LatLonSpherical(lat, lon);
+  }
+  /**
+   * Returns (signed) distance from ‘this’ point to great circle defined by start-point and
+   * end-point.
+   *
+   * @param   {LatLon} pathStart - Start point of great circle path.
+   * @param   {LatLon} pathEnd - End point of great circle path.
+   * @param   {number} [radius=6371e3] - (Mean) radius of earth (defaults to radius in metres).
+   * @returns {number} Distance to great circle (-ve if to left, +ve if to right of path).
+   *
+   * @example
+   *   const pCurrent = new LatLon(53.2611, -0.7972);
+   *   const p1 = new LatLon(53.3206, -1.7297);
+   *   const p2 = new LatLon(53.1887, 0.1334);
+   *   const d = pCurrent.crossTrackDistanceTo(p1, p2);  // -307.5 m
+   */
+  crossTrackDistanceTo(pathStart, pathEnd, radius = 6371e3) {
+    if (!(pathStart instanceof LatLonSpherical))
+      pathStart = LatLonSpherical.parse(pathStart);
+    if (!(pathEnd instanceof LatLonSpherical))
+      pathEnd = LatLonSpherical.parse(pathEnd);
+    const R2 = radius;
+    if (this.equals(pathStart))
+      return 0;
+    const δ13 = pathStart.distanceTo(this, R2) / R2;
+    const θ13 = pathStart.initialBearingTo(this).toRadians();
+    const θ12 = pathStart.initialBearingTo(pathEnd).toRadians();
+    const δxt = Math.asin(Math.sin(δ13) * Math.sin(θ13 - θ12));
+    return δxt * R2;
+  }
+  /**
+   * Returns how far ‘this’ point is along a path from from start-point, heading towards end-point.
+   * That is, if a perpendicular is drawn from ‘this’ point to the (great circle) path, the
+   * along-track distance is the distance from the start point to where the perpendicular crosses
+   * the path.
+   *
+   * @param   {LatLon} pathStart - Start point of great circle path.
+   * @param   {LatLon} pathEnd - End point of great circle path.
+   * @param   {number} [radius=6371e3] - (Mean) radius of earth (defaults to radius in metres).
+   * @returns {number} Distance along great circle to point nearest ‘this’ point.
+   *
+   * @example
+   *   const pCurrent = new LatLon(53.2611, -0.7972);
+   *   const p1 = new LatLon(53.3206, -1.7297);
+   *   const p2 = new LatLon(53.1887,  0.1334);
+   *   const d = pCurrent.alongTrackDistanceTo(p1, p2);  // 62.331 km
+   */
+  alongTrackDistanceTo(pathStart, pathEnd, radius = 6371e3) {
+    if (!(pathStart instanceof LatLonSpherical))
+      pathStart = LatLonSpherical.parse(pathStart);
+    if (!(pathEnd instanceof LatLonSpherical))
+      pathEnd = LatLonSpherical.parse(pathEnd);
+    const R2 = radius;
+    if (this.equals(pathStart))
+      return 0;
+    const δ13 = pathStart.distanceTo(this, R2) / R2;
+    const θ13 = pathStart.initialBearingTo(this).toRadians();
+    const θ12 = pathStart.initialBearingTo(pathEnd).toRadians();
+    const δxt = Math.asin(Math.sin(δ13) * Math.sin(θ13 - θ12));
+    const δat = Math.acos(Math.cos(δ13) / Math.abs(Math.cos(δxt)));
+    return δat * Math.sign(Math.cos(θ12 - θ13)) * R2;
+  }
+  /**
+   * Returns maximum latitude reached when travelling on a great circle on given bearing from
+   * ‘this’ point (‘Clairaut’s formula’). Negate the result for the minimum latitude (in the
+   * southern hemisphere).
+   *
+   * The maximum latitude is independent of longitude; it will be the same for all points on a
+   * given latitude.
+   *
+   * @param   {number} bearing - Initial bearing.
+   * @returns {number} Maximum latitude reached.
+   */
+  maxLatitude(bearing) {
+    const θ = Number(bearing).toRadians();
+    const φ = this.lat.toRadians();
+    const φMax = Math.acos(Math.abs(Math.sin(θ) * Math.cos(φ)));
+    return φMax.toDegrees();
+  }
+  /**
+   * Returns the pair of meridians at which a great circle defined by two points crosses the given
+   * latitude. If the great circle doesn't reach the given latitude, null is returned.
+   *
+   * @param   {LatLon}      point1 - First point defining great circle.
+   * @param   {LatLon}      point2 - Second point defining great circle.
+   * @param   {number}      latitude - Latitude crossings are to be determined for.
+   * @returns {Object|null} Object containing { lon1, lon2 } or null if given latitude not reached.
+   */
+  static crossingParallels(point1, point2, latitude) {
+    if (point1.equals(point2))
+      return null;
+    const φ = Number(latitude).toRadians();
+    const φ1 = point1.lat.toRadians();
+    const λ1 = point1.lon.toRadians();
+    const φ2 = point2.lat.toRadians();
+    const λ2 = point2.lon.toRadians();
+    const Δλ = λ2 - λ1;
+    const x2 = Math.sin(φ1) * Math.cos(φ2) * Math.cos(φ) * Math.sin(Δλ);
+    const y2 = Math.sin(φ1) * Math.cos(φ2) * Math.cos(φ) * Math.cos(Δλ) - Math.cos(φ1) * Math.sin(φ2) * Math.cos(φ);
+    const z2 = Math.cos(φ1) * Math.cos(φ2) * Math.sin(φ) * Math.sin(Δλ);
+    if (z2 * z2 > x2 * x2 + y2 * y2)
+      return null;
+    const λm = Math.atan2(-y2, x2);
+    const Δλi = Math.acos(z2 / Math.sqrt(x2 * x2 + y2 * y2));
+    const λi1 = λ1 + λm - Δλi;
+    const λi2 = λ1 + λm + Δλi;
+    const lon1 = λi1.toDegrees();
+    const lon2 = λi2.toDegrees();
+    return {
+      lon1: Dms.wrap180(lon1),
+      lon2: Dms.wrap180(lon2)
+    };
+  }
+  /* Rhumb - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
+  /**
+   * Returns the distance travelling from ‘this’ point to destination point along a rhumb line.
+   *
+   * @param   {LatLon} point - Latitude/longitude of destination point.
+   * @param   {number} [radius=6371e3] - (Mean) radius of earth (defaults to radius in metres).
+   * @returns {number} Distance in km between this point and destination point (same units as radius).
+   *
+   * @example
+   *   const p1 = new LatLon(51.127, 1.338);
+   *   const p2 = new LatLon(50.964, 1.853);
+   *   const d = p1.distanceTo(p2); //  40.31 km
+   */
+  rhumbDistanceTo(point, radius = 6371e3) {
+    if (!(point instanceof LatLonSpherical))
+      point = LatLonSpherical.parse(point);
+    const R2 = radius;
+    const φ1 = this.lat.toRadians();
+    const φ2 = point.lat.toRadians();
+    const Δφ = φ2 - φ1;
+    let Δλ = Math.abs(point.lon - this.lon).toRadians();
+    if (Math.abs(Δλ) > π)
+      Δλ = Δλ > 0 ? -(2 * π - Δλ) : 2 * π + Δλ;
+    const Δψ = Math.log(Math.tan(φ2 / 2 + π / 4) / Math.tan(φ1 / 2 + π / 4));
+    const q2 = Math.abs(Δψ) > 1e-11 ? Δφ / Δψ : Math.cos(φ1);
+    const δ = Math.sqrt(Δφ * Δφ + q2 * q2 * Δλ * Δλ);
+    const d = δ * R2;
+    return d;
+  }
+  /**
+   * Returns the bearing from ‘this’ point to destination point along a rhumb line.
+   *
+   * @param   {LatLon}    point - Latitude/longitude of destination point.
+   * @returns {number}    Bearing in degrees from north.
+   *
+   * @example
+   *   const p1 = new LatLon(51.127, 1.338);
+   *   const p2 = new LatLon(50.964, 1.853);
+   *   const d = p1.rhumbBearingTo(p2); // 116.7°
+   */
+  rhumbBearingTo(point) {
+    if (!(point instanceof LatLonSpherical))
+      point = LatLonSpherical.parse(point);
+    if (this.equals(point))
+      return NaN;
+    const φ1 = this.lat.toRadians();
+    const φ2 = point.lat.toRadians();
+    let Δλ = (point.lon - this.lon).toRadians();
+    if (Math.abs(Δλ) > π)
+      Δλ = Δλ > 0 ? -(2 * π - Δλ) : 2 * π + Δλ;
+    const Δψ = Math.log(Math.tan(φ2 / 2 + π / 4) / Math.tan(φ1 / 2 + π / 4));
+    const θ = Math.atan2(Δλ, Δψ);
+    const bearing = θ.toDegrees();
+    return Dms.wrap360(bearing);
+  }
+  /**
+   * Returns the destination point having travelled along a rhumb line from ‘this’ point the given
+   * distance on the given bearing.
+   *
+   * @param   {number} distance - Distance travelled, in same units as earth radius (default: metres).
+   * @param   {number} bearing - Bearing in degrees from north.
+   * @param   {number} [radius=6371e3] - (Mean) radius of earth (defaults to radius in metres).
+   * @returns {LatLon} Destination point.
+   *
+   * @example
+   *   const p1 = new LatLon(51.127, 1.338);
+   *   const p2 = p1.rhumbDestinationPoint(40300, 116.7); // 50.9642°N, 001.8530°E
+   */
+  rhumbDestinationPoint(distance, bearing, radius = 6371e3) {
+    const φ1 = this.lat.toRadians(), λ1 = this.lon.toRadians();
+    const θ = Number(bearing).toRadians();
+    const δ = distance / radius;
+    const Δφ = δ * Math.cos(θ);
+    let φ2 = φ1 + Δφ;
+    if (Math.abs(φ2) > π / 2)
+      φ2 = φ2 > 0 ? π - φ2 : -π - φ2;
+    const Δψ = Math.log(Math.tan(φ2 / 2 + π / 4) / Math.tan(φ1 / 2 + π / 4));
+    const q2 = Math.abs(Δψ) > 1e-11 ? Δφ / Δψ : Math.cos(φ1);
+    const Δλ = δ * Math.sin(θ) / q2;
+    const λ2 = λ1 + Δλ;
+    const lat = φ2.toDegrees();
+    const lon = λ2.toDegrees();
+    return new LatLonSpherical(lat, lon);
+  }
+  /**
+   * Returns the loxodromic midpoint (along a rhumb line) between ‘this’ point and second point.
+   *
+   * @param   {LatLon} point - Latitude/longitude of second point.
+   * @returns {LatLon} Midpoint between this point and second point.
+   *
+   * @example
+   *   const p1 = new LatLon(51.127, 1.338);
+   *   const p2 = new LatLon(50.964, 1.853);
+   *   const pMid = p1.rhumbMidpointTo(p2); // 51.0455°N, 001.5957°E
+   */
+  rhumbMidpointTo(point) {
+    if (!(point instanceof LatLonSpherical))
+      point = LatLonSpherical.parse(point);
+    const φ1 = this.lat.toRadians();
+    let λ1 = this.lon.toRadians();
+    const φ2 = point.lat.toRadians(), λ2 = point.lon.toRadians();
+    if (Math.abs(λ2 - λ1) > π)
+      λ1 += 2 * π;
+    const φ3 = (φ1 + φ2) / 2;
+    const f1 = Math.tan(π / 4 + φ1 / 2);
+    const f2 = Math.tan(π / 4 + φ2 / 2);
+    const f3 = Math.tan(π / 4 + φ3 / 2);
+    let λ3 = ((λ2 - λ1) * Math.log(f3) + λ1 * Math.log(f2) - λ2 * Math.log(f1)) / Math.log(f2 / f1);
+    if (!isFinite(λ3))
+      λ3 = (λ1 + λ2) / 2;
+    const lat = φ3.toDegrees();
+    const lon = λ3.toDegrees();
+    return new LatLonSpherical(lat, lon);
+  }
+  /* Area - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+  /**
+   * Calculates the area of a spherical polygon where the sides of the polygon are great circle
+   * arcs joining the vertices.
+   *
+   * @param   {LatLon[]} polygon - Array of points defining vertices of the polygon.
+   * @param   {number}   [radius=6371e3] - (Mean) radius of earth (defaults to radius in metres).
+   * @returns {number}   The area of the polygon in the same units as radius.
+   *
+   * @example
+   *   const polygon = [new LatLon(0,0), new LatLon(1,0), new LatLon(0,1)];
+   *   const area = LatLon.areaOf(polygon); // 6.18e9 m²
+   */
+  static areaOf(polygon, radius = 6371e3) {
+    const R2 = radius;
+    const closed = polygon[0].equals(polygon[polygon.length - 1]);
+    if (!closed)
+      polygon.push(polygon[0]);
+    const nVertices = polygon.length - 1;
+    let S2 = 0;
+    for (let v2 = 0; v2 < nVertices; v2++) {
+      const φ1 = polygon[v2].lat.toRadians();
+      const φ2 = polygon[v2 + 1].lat.toRadians();
+      const Δλ = (polygon[v2 + 1].lon - polygon[v2].lon).toRadians();
+      const E2 = 2 * Math.atan2(Math.tan(Δλ / 2) * (Math.tan(φ1 / 2) + Math.tan(φ2 / 2)), 1 + Math.tan(φ1 / 2) * Math.tan(φ2 / 2));
+      S2 += E2;
+    }
+    if (isPoleEnclosedBy(polygon))
+      S2 = Math.abs(S2) - 2 * π;
+    const A2 = Math.abs(S2 * R2 * R2);
+    if (!closed)
+      polygon.pop();
+    return A2;
+    function isPoleEnclosedBy(p2) {
+      let ΣΔ = 0;
+      let prevBrng = p2[0].initialBearingTo(p2[1]);
+      for (let v2 = 0; v2 < p2.length - 1; v2++) {
+        const initBrng2 = p2[v2].initialBearingTo(p2[v2 + 1]);
+        const finalBrng = p2[v2].finalBearingTo(p2[v2 + 1]);
+        ΣΔ += (initBrng2 - prevBrng + 540) % 360 - 180;
+        ΣΔ += (finalBrng - initBrng2 + 540) % 360 - 180;
+        prevBrng = finalBrng;
+      }
+      const initBrng = p2[0].initialBearingTo(p2[1]);
+      ΣΔ += (initBrng - prevBrng + 540) % 360 - 180;
+      const enclosed = Math.abs(ΣΔ) < 90;
+      return enclosed;
+    }
+  }
+  /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
+  /**
+   * Checks if another point is equal to ‘this’ point.
+   *
+   * @param   {LatLon} point - Point to be compared against this point.
+   * @returns {bool}   True if points have identical latitude and longitude values.
+   *
+   * @example
+   *   const p1 = new LatLon(52.205, 0.119);
+   *   const p2 = new LatLon(52.205, 0.119);
+   *   const equal = p1.equals(p2); // true
+   */
+  equals(point) {
+    if (!(point instanceof LatLonSpherical))
+      point = LatLonSpherical.parse(point);
+    if (Math.abs(this.lat - point.lat) > Number.EPSILON)
+      return false;
+    if (Math.abs(this.lon - point.lon) > Number.EPSILON)
+      return false;
+    return true;
+  }
+  /**
+   * Converts ‘this’ point to a GeoJSON object.
+   *
+   * @returns {Object} this point as a GeoJSON ‘Point’ object.
+   */
+  toGeoJSON() {
+    return { type: "Point", coordinates: [this.lon, this.lat] };
+  }
+  /**
+   * Returns a string representation of ‘this’ point, formatted as degrees, degrees+minutes, or
+   * degrees+minutes+seconds.
+   *
+   * @param   {string} [format=d] - Format point as 'd', 'dm', 'dms', or 'n' for signed numeric.
+   * @param   {number} [dp=4|2|0] - Number of decimal places to use: default 4 for d, 2 for dm, 0 for dms.
+   * @returns {string} Comma-separated formatted latitude/longitude.
+   * @throws  {RangeError} Invalid format.
+   *
+   * @example
+   *   const greenwich = new LatLon(51.47788, -0.00147);
+   *   const d = greenwich.toString();                        // 51.4779°N, 000.0015°W
+   *   const dms = greenwich.toString('dms', 2);              // 51°28′40.37″N, 000°00′05.29″W
+   *   const [lat, lon] = greenwich.toString('n').split(','); // 51.4779, -0.0015
+   */
+  toString(format = "d", dp = void 0) {
+    if (!["d", "dm", "dms", "n"].includes(format))
+      throw new RangeError(`invalid format ‘${format}’`);
+    if (format == "n") {
+      if (dp == void 0)
+        dp = 4;
+      return `${this.lat.toFixed(dp)},${this.lon.toFixed(dp)}`;
+    }
+    const lat = Dms.toLat(this.lat, format, dp);
+    const lon = Dms.toLon(this.lon, format, dp);
+    return `${lat}, ${lon}`;
   }
 }
 const useAzimuthIntersections = () => {
@@ -9973,7 +9988,7 @@ const useAzimuthIntersections = () => {
     for (let i = 0; i < vehicles.length - 1; i++) {
       for (let j = i + 1; j < vehicles.length; j++) {
         const intersection = getIntersection(vehicles[i].latitude, vehicles[i].longitude, vehicles[j].latitude, vehicles[j].longitude, vehicles[i].azimuth, vehicles[j].azimuth);
-        if (intersection !== null) {
+        if (intersection) {
           setIntersections((i2) => [...i2, intersection]);
         }
       }
@@ -9989,20 +10004,26 @@ const useAzimuthIntersections = () => {
     const pointA = new LatLonEllipsoidal_Vincenty(latA, lonA);
     const pointB = new LatLonEllipsoidal_Vincenty(latB, lonB);
     const pointC = new LatLonEllipsoidal_Vincenty(intersection.lat, intersection.lon);
-    const inverseAC = pointA.inverse(pointC);
-    const inverseBC = pointA.inverse(pointC);
-    if (inverseAC.distance > 1e5 || inverseBC.distance > 1e5) {
-      return null;
+    let inverseAC = {};
+    let inverseBC = {};
+    try {
+      inverseAC = pointA.inverse(pointC);
+      inverseBC = pointB.inverse(pointC);
+    } catch (e2) {
+      if (typeof e2 === typeof EvalError) {
+        console.log(e2);
+      }
+      console.log("no e");
     }
-    const rayLength2 = 3e4;
-    const directAC = pointA.direct(rayLength2, azimuthA);
-    const directBC = pointB.direct(rayLength2, azimuthB);
+    if (inverseAC.distance && inverseBC.distance && (inverseAC.distance > 1e5 || inverseBC.distance > 1e5)) {
+      return void 0;
+    }
     return {
       intersection: pointC,
       pointA,
-      pointB,
-      directAC,
-      directBC
+      pointB
+      // directAC,
+      // directBC
     };
   };
   return intersections;
@@ -10088,8 +10109,8 @@ const useEwAzimuths = () => {
       const pointA = new LatLonEllipsoidal_Vincenty(ew.latitude, ew.longitude);
       const pointB = new LatLonEllipsoidal_Vincenty(avg.lat, avg.lon);
       const inverseAB = pointA.inverse(pointB);
-      const rayLength = 3e4;
-      const directAB = pointA.direct(rayLength, inverseAB.finalBearing);
+      const rayLength2 = 3e4;
+      const directAB = pointA.direct(rayLength2, inverseAB.finalBearing);
       const res = {
         ewVehicleId: ew.id,
         point: pointA,
@@ -10103,6 +10124,7 @@ const useEwAzimuths = () => {
 };
 const GoogleMap = (props) => {
   const [googleMap, setGoogleMap] = reactExports.useState();
+  const [isMapInitialized, setIsMapInitialized] = reactExports.useState(false);
   const elintV = useElintVehiclesStore((state) => state.vehicles);
   const ewV = useEwVehiclesStore((state) => state.vehicles);
   const intersections = useAzimuthIntersections();
@@ -10119,15 +10141,22 @@ const GoogleMap = (props) => {
     language: "uk"
   }), []);
   reactExports.useEffect(() => {
+    if (isMapInitialized) {
+      return;
+    }
+    if (!elintV || elintV.length < 1) {
+      return;
+    }
     loader.importLibrary("maps").then(async (mapsLibrary) => {
       const { Map: Map2 } = mapsLibrary;
       const map = new Map2(document.getElementById("map"), {
-        center: { lat: 50.4519459, lng: 30.4684381 },
-        zoom: 12.8
+        center: { lat: elintV[0].latitude, lng: elintV[0].longitude },
+        zoom: 11
       });
       setGoogleMap(map);
+      setIsMapInitialized(true);
     });
-  }, []);
+  }, [isMapInitialized, elintV]);
   reactExports.useEffect(() => {
     if (!googleMap) {
       return;
@@ -10145,8 +10174,19 @@ ${v2.longitude}`,
         icon: uaMarker,
         clickable: true
       });
+      let lineAC = new google.maps.Polyline();
+      if (v2.ray) {
+        lineAC = new google.maps.Polyline({
+          path: [{ lat: v2.latitude, lng: v2.longitude }, { lat: v2.ray.lat, lng: v2.ray.lon }],
+          geodesic: true,
+          strokeColor: "#0000FF",
+          strokeOpacity: 1,
+          strokeWeight: 2
+        });
+      }
+      lineAC.setMap(googleMap);
       marker.setMap(googleMap);
-      setExistingElintPoints((ex) => [...ex, marker]);
+      setExistingElintPoints((ex) => [...ex, lineAC, marker]);
     });
   }, [elintV, googleMap]);
   reactExports.useEffect(() => {
@@ -10179,29 +10219,13 @@ ${v2.longitude}`,
     });
     setMapIntersections([]);
     intersections.forEach((i) => {
-      const lineAC = new google.maps.Polyline({
-        path: [{ lat: i.pointA.lat, lng: i.pointA.lon }, { lat: i.directAC.point.lat, lng: i.directAC.point.lon }],
-        geodesic: true,
-        strokeColor: "#0000FF",
-        strokeOpacity: 1,
-        strokeWeight: 2
-      });
-      const lineBC = new google.maps.Polyline({
-        path: [{ lat: i.pointB.lat, lng: i.pointB.lon }, { lat: i.directBC.point.lat, lng: i.directBC.point.lon }],
-        geodesic: true,
-        strokeColor: "#0000FF",
-        strokeOpacity: 1,
-        strokeWeight: 2
-      });
       const intersectionPoint = new google.maps.Marker({
         position: { lat: i.intersection.lat, lng: i.intersection.lon },
         label: "target",
         draggable: false
       });
-      lineAC.setMap(googleMap);
-      lineBC.setMap(googleMap);
       intersectionPoint.setMap(googleMap);
-      setMapIntersections((ex) => [...ex, lineAC, lineBC, intersectionPoint]);
+      setMapIntersections((ex) => [...ex, intersectionPoint]);
     });
   }, [intersections, googleMap]);
   reactExports.useEffect(() => {
@@ -10239,7 +10263,7 @@ ${v2.longitude}`,
       setMapAvgInt(avgPoint);
     }
   }, [avgIntersection, googleMap]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { id: "map", className: "h-screen" });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { id: "map", className: "h-svh" });
 };
 const TargetCard = () => {
   return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid justify-center text-sm overflow-ellipsis min-w-[150px]" });
@@ -11970,6 +11994,12 @@ function IconBase(props) {
 function BsPlusCircle(props) {
   return GenIcon({ "tag": "svg", "attr": { "fill": "currentColor", "viewBox": "0 0 16 16" }, "child": [{ "tag": "path", "attr": { "d": "M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" } }, { "tag": "path", "attr": { "d": "M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" } }] })(props);
 }
+function BiChevronDown(props) {
+  return GenIcon({ "tag": "svg", "attr": { "viewBox": "0 0 24 24" }, "child": [{ "tag": "path", "attr": { "d": "M16.293 9.293 12 13.586 7.707 9.293l-1.414 1.414L12 16.414l5.707-5.707z" } }] })(props);
+}
+function BiChevronUp(props) {
+  return GenIcon({ "tag": "svg", "attr": { "viewBox": "0 0 24 24" }, "child": [{ "tag": "path", "attr": { "d": "m6.293 13.293 1.414 1.414L12 10.414l4.293 4.293 1.414-1.414L12 7.586z" } }] })(props);
+}
 function BiSolidPencil(props) {
   return GenIcon({ "tag": "svg", "attr": { "viewBox": "0 0 24 24" }, "child": [{ "tag": "path", "attr": { "d": "M8.707 19.707 18 10.414 13.586 6l-9.293 9.293a1.003 1.003 0 0 0-.263.464L3 21l5.242-1.03c.176-.044.337-.135.465-.263zM21 7.414a2 2 0 0 0 0-2.828L19.414 3a2 2 0 0 0-2.828 0L15 4.586 19.414 9 21 7.414z" } }] })(props);
 }
@@ -12080,11 +12110,14 @@ const ElintVehicleMinimalList = () => {
 };
 const ElintVehicles = () => {
   const [coordsFormVisible, setCoordsFormVisible] = reactExports.useState(true);
+  const toggleFormVisible = () => setCoordsFormVisible(!coordsFormVisible);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-2 rounded-md shadow-lg p-2 bg-primary-background-darker", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-between", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "ELINTs" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Only, { when: coordsFormVisible, children: /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "submit", className: "bg-primary-background-dark", onClick: () => setCoordsFormVisible(false), children: "Save" }) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Only, { when: !coordsFormVisible, children: /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "bg-primary-background-dark", onClick: () => setCoordsFormVisible(true), children: "Edit" }) })
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-3xl", onClick: toggleFormVisible, children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Only, { when: coordsFormVisible, children: /* @__PURE__ */ jsxRuntimeExports.jsx(BiChevronUp, {}) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Only, { when: !coordsFormVisible, children: /* @__PURE__ */ jsxRuntimeExports.jsx(BiChevronDown, {}) })
+      ] })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(Only, { when: coordsFormVisible, children: /* @__PURE__ */ jsxRuntimeExports.jsx(ElintVehicleCardsList, {}) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(Only, { when: !coordsFormVisible, children: /* @__PURE__ */ jsxRuntimeExports.jsx(ElintVehicleMinimalList, {}) }),
@@ -12126,18 +12159,57 @@ const EwVehicleMinimalCard = (props) => {
 };
 const EwVehicles = () => {
   const [coordsFormVisible, setCoordsFormVisible] = reactExports.useState(true);
+  const toggleFormVisible = () => setCoordsFormVisible(!coordsFormVisible);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-2 rounded-md shadow-lg p-2 bg-primary-background-darker", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-between", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "EWs" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Only, { when: coordsFormVisible, children: /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "submit", className: "bg-primary-background-dark", onClick: () => setCoordsFormVisible(false), children: "Save" }) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Only, { when: !coordsFormVisible, children: /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", className: "bg-primary-background-dark", onClick: () => setCoordsFormVisible(true), children: "Edit" }) })
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-3xl", onClick: toggleFormVisible, children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Only, { when: coordsFormVisible, children: /* @__PURE__ */ jsxRuntimeExports.jsx(BiChevronUp, {}) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Only, { when: !coordsFormVisible, children: /* @__PURE__ */ jsxRuntimeExports.jsx(BiChevronDown, {}) })
+      ] })
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(Only, { when: coordsFormVisible, children: /* @__PURE__ */ jsxRuntimeExports.jsx(EwVehicleCoordsList, {}) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(Only, { when: !coordsFormVisible, children: /* @__PURE__ */ jsxRuntimeExports.jsx(EwVehicleMinimalList, {}) }),
     /* @__PURE__ */ jsxRuntimeExports.jsx(EwAzimuthCardsList, {})
   ] });
 };
+const elintVKey = "elintV";
+const ewVKey = "ewV";
+const useLocalStorage = () => {
+  const elintV = useElintVehiclesStore((state) => state.vehicles);
+  const ewV = useEwVehiclesStore((state) => state.vehicles);
+  reactExports.useEffect(() => {
+    const lsElintVString = localStorage.getItem(elintVKey);
+    if (lsElintVString) {
+      const lsElintV = JSON.parse(lsElintVString);
+      useElintVehiclesStore.setState((initial) => {
+        return { ...initial, vehicles: lsElintV };
+      });
+    }
+    const lsEwVString = localStorage.getItem(ewVKey);
+    if (lsEwVString) {
+      const lsEwV = JSON.parse(lsEwVString);
+      useEwVehiclesStore.setState((initial) => {
+        return { ...initial, vehicles: lsEwV };
+      });
+    }
+  }, []);
+  reactExports.useEffect(() => {
+    if (elintV.length > 0) {
+      saveLs(elintVKey, elintV);
+    }
+  }, [elintV]);
+  reactExports.useEffect(() => {
+    if (ewV.length > 0) {
+      saveLs(ewVKey, ewV);
+    }
+  }, [ewV]);
+};
+const saveLs = (key, data) => {
+  localStorage.setItem(key, JSON.stringify(data));
+};
 const MainPage = () => {
+  useLocalStorage();
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-4 relative h-full", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(ElintVehicles, {}),
     /* @__PURE__ */ jsxRuntimeExports.jsx(EwVehicles, {}),

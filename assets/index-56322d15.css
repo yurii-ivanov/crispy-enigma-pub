@@ -547,8 +547,8 @@ button:focus {
 .h-full {
   height: 100%;
 }
-.h-screen {
-  height: 100vh;
+.h-svh {
+  height: 100svh;
 }
 .max-h-full {
   max-height: 100%;
@@ -635,6 +635,10 @@ button:focus {
 .text-2xl {
   font-size: 1.5rem;
   line-height: 2rem;
+}
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
 }
 .text-sm {
   font-size: 0.875rem;
